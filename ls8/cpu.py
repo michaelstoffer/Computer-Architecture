@@ -1,7 +1,7 @@
 """CPU functionality."""
 
 import sys
-print(sys.argv[1])
+
 class CPU:
     """Main CPU class."""
 
@@ -10,10 +10,13 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.sp = 7
         self.HLT = 0b00000001
         self.LDI = 0b10000010
         self.PRN = 0b01000111
         self.MUL = 0b10100010
+        self.PUSH = 0b01000101
+        self.POP = 0b01000110
         self.address = 0
 
     def ram_read(self, address):
@@ -70,6 +73,7 @@ class CPU:
     def run(self):
         """Run the CPU."""
         self.trace()
+        self.reg[self.sp] = 0xf4
         running = True
         while running:
             IR = self.ram_read(self.pc)
@@ -88,6 +92,21 @@ class CPU:
             elif IR == self.MUL:
                 self.alu(IR, operand_a, operand_b)
                 self.pc += 3
+            elif IR == self.PUSH:
+                self.reg[self.sp] -= 1
+                self.reg[self.sp] &= 0xff
+                reg_num = self.ram[self.pc + 1]
+                value = self.reg[reg_num]
+                address_to_push_to = self.reg[self.sp]
+                self.ram[address_to_push_to] = value
+                self.pc += 2
+            elif IR == self.POP:
+                address_to_pop_from = self.reg[self.sp]
+                value = self.ram[address_to_pop_from]
+                reg_num = self.ram[self.pc + 1]
+                self.reg[reg_num] = value
+                self.reg[self.sp] += 1
+                self.pc += 2
             else:
                 print(f"Unknown instruction {IR}")
                 running = False 
